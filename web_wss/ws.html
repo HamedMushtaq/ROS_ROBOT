@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>ESP32 Robot Control</title>
+
+  <style>
+    body {
+      background: #111;
+      color: white;
+      font-family: Arial;
+      text-align: center;
+      padding-top: 40px;
+    }
+
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 5px;
+    }
+
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #00ff88;
+    }
+
+    .box {
+      margin-top: 30px;
+      font-size: 16px;
+      color: #aaa;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>ESP32 Robot WebSocket Control</h1>
+
+<input id="ip" placeholder="Enter ESP32 IP (e.g. 192.168.1.100)">
+<button onclick="connect()">Connect</button>
+
+<div id="status">Not connected</div>
+
+<div class="box">
+  <b>Controls:</b><br><br>
+  W = Forward<br>
+  S = Backward<br>
+  A = Left<br>
+  D = Right<br>
+  X or SPACE = Stop
+</div>
+
+<script>
+let ws = null;
+
+function connect()
+{
+  const ip = document.getElementById("ip").value;
+
+  ws = new WebSocket("ws://" + ip + ":81");
+
+  ws.onopen = function()
+  {
+    document.getElementById("status").innerHTML = "Connected ✅";
+  };
+
+  ws.onclose = function()
+  {
+    document.getElementById("status").innerHTML = "Disconnected ❌";
+  };
+
+  ws.onerror = function()
+  {
+    document.getElementById("status").innerHTML = "Connection Error ⚠️";
+  };
+}
+
+// ================= KEYBOARD CONTROL =================
+document.addEventListener("keydown", function(e)
+{
+  if (!ws || ws.readyState !== 1) return;
+
+  let key = e.key.toLowerCase();
+  let cmd = "";
+
+  if (key === "w") cmd = "W";
+  else if (key === "s") cmd = "S";
+  else if (key === "a") cmd = "A";
+  else if (key === "d") cmd = "D";
+  else if (key === "x" || key === " ") cmd = "X";
+
+  if (cmd !== "")
+  {
+    ws.send(cmd);
+  }
+});
+
+// stop when key released (smooth control)
+document.addEventListener("keyup", function(e)
+{
+  if (!ws || ws.readyState !== 1) return;
+
+  let key = e.key.toLowerCase();
+
+  if (["w","a","s","d"].includes(key))
+  {
+    ws.send("X");
+  }
+});
+</script>
+
+</body>
+</html>
