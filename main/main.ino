@@ -129,8 +129,8 @@ CRGB leds[numLeds];
 
 // ================ MOTORS ===============
 Motor m1(7, 15, 0, true);
-Motor m2(4, 5, 1, false);
-Motor m3(39, 38, 2, true);
+Motor m2(39, 38, 2, false);
+Motor m3(4, 5, 1, true);
 Motor m4(42, 41, 3, false);
 
 Robot robot(m1, m2, m3, m4);

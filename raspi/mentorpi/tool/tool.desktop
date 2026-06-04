@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Tool
+Comment=Tool Program
+Encoding=UTF-8
+Exec=zsh /home/ubuntu/mentorpi/tool/tool.sh
+Terminal=false
+MultipleArgs=false
+Type=Application
+Categories=Application;Development;
+StartupNotify=true
+Icon=/home/ubuntu/mentorpi/tool/app.png
