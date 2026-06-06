@@ -109,12 +109,12 @@ setInterval(() => {
   y = 0;
 
   // forward/backward
-  if (keys["w"]) y += 100;
-  if (keys["s"]) y -= 100;
+  if (keys["w"]) y -= 100;
+  if (keys["s"]) y += 100;
 
   // left/right
-  if (keys["a"]) x -= 25;
-  if (keys["d"]) x += 25;
+  if (keys["a"]) x += 25;
+  if (keys["d"]) x -= 25;
 
   // stop if nothing pressed
   if (!keys["w"] && !keys["s"] && !keys["a"] && !keys["d"])

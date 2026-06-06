@@ -64,7 +64,7 @@ private:
   float currentLeft = 0;
   float currentRight = 0;
 
-  float accelStep = 1.0f;
+  float accelStep = 5.0f;
 
   unsigned long lastUpdate = 0;
 
