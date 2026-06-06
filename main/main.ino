@@ -12,8 +12,8 @@ CRGB leds[numLeds];
 
 // ================ MOTORS ===============
 Motor m1(7, 15, 0, true);
-Motor m2(39, 38, 2, false);
-Motor m3(4, 5, 1, true);
+Motor m3(39, 38, 2, false);
+Motor m2(4, 5, 1, true);
 Motor m4(42, 41, 3, false);
 
 Robot robot(m1, m2, m3, m4);
@@ -55,43 +55,47 @@ void blinkRedForever() {
 
 // =============== WS 
 void onWebSocketEvent(
-    uint8_t num,
-    WStype_t type,
-    uint8_t * payload,
-    size_t length) {
-    if(type != WStype_TEXT)
-        return;
+  uint8_t num,
+  WStype_t type,
+  uint8_t * payload,
+  size_t length) {
+  if(type != WStype_TEXT)
+      return;
 
-    JsonDocument doc;
+  JsonDocument doc;
 
-    auto err = deserializeJson(doc,payload);
+  auto err = deserializeJson(doc,payload);
 
-    if (err)
-    {
-        Serial.print("JSON Error: ");
-        Serial.println(err.c_str());
-        return;
-    }
+  if (err)
+  {
+    Serial.print("JSON Error: ");
+    Serial.println(err.c_str());
+    return;
+  }
 
-    float x = doc["x"] | 0;
-    float y = doc["y"] | 0;
+  float x = doc["x"] | 0;
+  float y = doc["y"] | 0;
 
-    int speed = doc["speed"] | 100;
+  int speed = doc["speed"] | 100;
 
-    robot.setMaxSpeed(speed);
-    robot.drive(x,y);
+  robot.setMaxSpeed(speed);
+  robot.drive(x,y);
 }
 
 void testMotors() {
-  m1.set(100, true);
+  delay(2000);
+  m1.set(100, false);
   delay(2000);
   robot.stop();
-  m2.set(100, true);
+  m2.set(100, false);
   delay(2000);
-  m3.set(100, true);
+  robot.stop();
+  m3.set(100, false);
   delay(2000);
-  m4.set(100, true);
+  robot.stop();
+  m4.set(100, false);
   delay(2000);
+  robot.stop();
 }
 
 void setup() {
@@ -107,7 +111,7 @@ void setup() {
   FastLED.clear();
   FastLED.show();
 
-  testMotors();
+  //testMotors();
 
   // Start WiFi
   WiFi.begin(ssid, password);
