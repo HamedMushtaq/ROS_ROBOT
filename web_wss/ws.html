@@ -1,113 +1,139 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>ESP32 Robot Control</title>
+<meta charset="UTF-8">
+<title>Robot Controller</title>
 
-  <style>
-    body {
-      background: #111;
-      color: white;
-      font-family: Arial;
-      text-align: center;
-      padding-top: 40px;
-    }
+<style>
+body {
+  background: #111;
+  color: white;
+  font-family: Arial;
+  text-align: center;
+  padding-top: 40px;
+}
 
-    input, button {
-      padding: 10px;
-      font-size: 16px;
-      margin: 5px;
-    }
+input, button {
+  padding: 10px;
+  margin: 5px;
+  font-size: 16px;
+}
 
-    #status {
-      margin-top: 20px;
-      font-size: 18px;
-      color: #00ff88;
-    }
+#status {
+  margin-top: 10px;
+  color: #00ff88;
+}
 
-    .box {
-      margin-top: 30px;
-      font-size: 16px;
-      color: #aaa;
-    }
-  </style>
+.slider {
+  width: 300px;
+}
+</style>
 </head>
 
 <body>
 
-<h1>ESP32 Robot WebSocket Control</h1>
+<h2>ESP32 Smooth Robot Control</h2>
 
-<input id="ip" placeholder="Enter ESP32 IP (e.g. 192.168.1.100)">
+<input id="ip" placeholder="ESP32 IP (192.168.1.100)" value="192.168.1.100">
 <button onclick="connect()">Connect</button>
 
 <div id="status">Not connected</div>
 
-<div class="box">
-  <b>Controls:</b><br><br>
+<br>
+
+<label>Speed: <span id="speedVal">80</span>%</label><br>
+<input type="range" min="0" max="100" value="80"
+       class="slider"
+       id="speedSlider">
+
+<br><br>
+
+<div>
+  <b>Hold keys:</b><br>
   W = Forward<br>
   S = Backward<br>
   A = Left<br>
   D = Right<br>
-  X or SPACE = Stop
+  Release = Stop
 </div>
 
 <script>
+
 let ws = null;
+
+let x = 0;
+let y = 0;
+let speed = 80;
+
+document.getElementById("speedSlider").oninput = function()
+{
+  speed = parseInt(this.value);
+  document.getElementById("speedVal").innerText = speed;
+};
 
 function connect()
 {
   const ip = document.getElementById("ip").value;
-
   ws = new WebSocket("ws://" + ip + ":81");
 
-  ws.onopen = function()
-  {
-    document.getElementById("status").innerHTML = "Connected ✅";
+  ws.onopen = () => {
+    document.getElementById("status").innerText = "Connected ✅";
   };
 
-  ws.onclose = function()
-  {
-    document.getElementById("status").innerHTML = "Disconnected ❌";
+  ws.onclose = () => {
+    document.getElementById("status").innerText = "Disconnected ❌";
   };
 
-  ws.onerror = function()
-  {
-    document.getElementById("status").innerHTML = "Connection Error ⚠️";
+  ws.onerror = () => {
+    document.getElementById("status").innerText = "Error ⚠️";
   };
 }
 
-// ================= KEYBOARD CONTROL =================
-document.addEventListener("keydown", function(e)
-{
-  if (!ws || ws.readyState !== 1) return;
+// ================= KEY STATE =================
+let keys = {};
 
-  let key = e.key.toLowerCase();
-  let cmd = "";
-
-  if (key === "w") cmd = "W";
-  else if (key === "s") cmd = "S";
-  else if (key === "a") cmd = "A";
-  else if (key === "d") cmd = "D";
-  else if (key === "x" || key === " ") cmd = "X";
-
-  if (cmd !== "")
-  {
-    ws.send(cmd);
-  }
+document.addEventListener("keydown", (e) => {
+  keys[e.key.toLowerCase()] = true;
 });
 
-// stop when key released (smooth control)
-document.addEventListener("keyup", function(e)
-{
+document.addEventListener("keyup", (e) => {
+  keys[e.key.toLowerCase()] = false;
+});
+
+// ================= CONTROL LOOP =================
+setInterval(() => {
+
   if (!ws || ws.readyState !== 1) return;
 
-  let key = e.key.toLowerCase();
+  x = 0;
+  y = 0;
 
-  if (["w","a","s","d"].includes(key))
+  // forward/backward
+  if (keys["w"]) y += 100;
+  if (keys["s"]) y -= 100;
+
+  // left/right
+  if (keys["a"]) x -= 25;
+  if (keys["d"]) x += 25;
+
+  // stop if nothing pressed
+  if (!keys["w"] && !keys["s"] && !keys["a"] && !keys["d"])
   {
-    ws.send("X");
+    x = 0;
+    y = 0;
   }
-});
+
+  const data = {
+    x: x,
+    y: y,
+    speed: speed
+  };
+
+  ws.send(JSON.stringify(data));
+  console.log("cordinate > ", data);
+
+}, 50); // 20 Hz update rate
+
 </script>
 
 </body>

@@ -9,16 +9,9 @@ private:
 
   int speedToPWM(int sp) {
     sp = constrain(sp, 0, 100);
-
-    int pwm = map(sp, 0, 100, 0, 4095);
-
-    if (pwm > 0 && pwm < 2000)
-        pwm = 2000;
-
     if (sp == 0)
-        pwm = 0;
-
-    return pwm;
+      return 0;
+    return map(sp, 1, 100, 2000, 4095);
   }
 
 public:
@@ -27,6 +20,16 @@ public:
     this->dirPin = dirPin;
     this->channel = channel;
     this->inverted = inverted;
+  }
+
+  void setSignedSpeed(float speed) {
+    speed = constrain(speed, -100.0f, 100.0f);
+
+    bool forward = speed >= 0;
+
+    int absSpeed = abs((int)speed);
+
+    set(absSpeed, forward);
   }
 
   void begin(int freq = 5000, int resolution = 12) {
@@ -55,13 +58,31 @@ private:
   Motor &m3;
   Motor &m4;
 
+  float targetLeft = 0;
+  float targetRight = 0;
+
+  float currentLeft = 0;
+  float currentRight = 0;
+
+  float accelStep = 1.0f;
+
+  unsigned long lastUpdate = 0;
+
 public:
-  Robot(Motor &m1,
-        Motor &m2,
-        Motor &m3,
-        Motor &m4)
-      : m1(m1), m2(m2), m3(m3), m4(m4)
-  {}
+
+    int maxSpeed = 100;
+
+    Robot(Motor &m1,
+          Motor &m2,
+          Motor &m3,
+          Motor &m4)
+      : m1(m1),
+        m2(m2),
+        m3(m3),
+        m4(m4)
+    {
+    }
+
 
   void stop() {
     m1.stop();
@@ -84,8 +105,7 @@ public:
     m4.set(speed, false);
   }
 
-  void right(int speed)
-  {
+  void right(int speed) {
     m1.set(speed, false);
     m2.set(speed, true);
     m3.set(speed, false);
@@ -98,7 +118,7 @@ public:
     m3.set(speed, true);
     m4.set(speed, false);
   }
-  
+
   void rampForward(int startSpeed, int endSpeed, int stepDelay) {
     startSpeed = constrain(startSpeed, 0, 100);
     endSpeed   = constrain(endSpeed, 0, 100);
@@ -116,5 +136,62 @@ public:
         delay(stepDelay);
       }
     }
-  }    
+  }      
+
+  void setMaxSpeed(int value) {
+    maxSpeed = constrain(value,0,100);
+  }
+
+  void drive(float x, float y) {
+    x = constrain(x,-100,100);
+    y = constrain(y,-100,100);
+
+    float left = y + x;
+    float right = y - x;
+
+    left = constrain(left,-100,100);
+    right = constrain(right,-100,100);
+
+    left *= maxSpeed / 100.0f;
+    right *= maxSpeed / 100.0f;
+
+    targetLeft = left;
+    targetRight = right;
+  }
+
+  void emergencyStop() {
+    targetLeft = 0;
+    targetRight = 0;
+
+    currentLeft = 0;
+    currentRight = 0;
+
+    m1.stop();
+    m2.stop();
+    m3.stop();
+    m4.stop();
+  }
+
+  void update() {
+    if(millis() - lastUpdate < 20)
+      return;
+
+    lastUpdate = millis();
+
+    if(currentLeft < targetLeft)
+        currentLeft = min(currentLeft + accelStep, targetLeft);
+    else if(currentLeft > targetLeft)
+        currentLeft = max(currentLeft - accelStep, targetLeft);
+
+    if(currentRight < targetRight)
+        currentRight = min(currentRight + accelStep, targetRight);
+    else if(currentRight > targetRight)
+        currentRight = max(currentRight - accelStep, targetRight);
+
+    m1.setSignedSpeed(currentLeft);
+    m2.setSignedSpeed(currentLeft);
+
+    m3.setSignedSpeed(currentRight);
+    m4.setSignedSpeed(currentRight);
+  }
 };
